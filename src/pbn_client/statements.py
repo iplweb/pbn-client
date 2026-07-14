@@ -1,16 +1,14 @@
-"""Silnik oświadczeń i czyste operacje publikacji PBN (Warstwa 1).
+"""Silnik oświadczeń i czyste operacje publikacji PBN.
 
 ``StatementsMixin`` zawiera wyłącznie czyste operacje protokołu PBN: POST/GET
 publikacji i opłat, konwersje JSON oraz silnik diff/DELETE/POST oświadczeń.
-Operuje na PBN UID (string), słownikach JSON i flagach bool — nie zna ``bpp``
-ani obiektu ``Uczelnia``.
+Operuje na PBN UID (string), słownikach JSON i flagach bool — nie zna modelu
+domenowego aplikacji-hosta.
 
 Zależy (przez ``self``) od ``InstitutionsProfileMixin`` (metody
 ``delete_publication_statement``, ``delete_all_publication_statements``,
 ``get_institution_statements_of_single_publication``), dlatego musi być
 komponowany razem z nim w ``PBNClient``.
-
-Patrz: docs/superpowers/specs/2026-06-02-pbn-client-split-design.md
 """
 
 import logging
@@ -40,7 +38,7 @@ logger = logging.getLogger(__name__)
 
 
 class StatementsMixin:
-    """Czyste operacje publikacji i oświadczeń PBN (bez zależności od bpp)."""
+    """Czyste operacje publikacji i oświadczeń PBN (bez zależności od aplikacji)."""
 
     def post_publication(self, json):
         """POST publikacji wraz z oświadczeniami do ``/api/v1/publications``.
@@ -240,13 +238,13 @@ class StatementsMixin:
         )
 
     def _diff_statements(self, pbn_statements, intended_statements):
-        """Porównuje zestaw oświadczeń PBN z intencją BPP.
+        """Porównuje zestaw oświadczeń PBN z zestawem oczekiwanym.
 
         Zwraca (only_in_pbn, only_in_intended) jako sety kluczy
         ``(person_mongoId, discipline_numerek)``:
 
-        - ``only_in_pbn`` — do usunięcia z PBN (PBN ma, BPP nie chce)
-        - ``only_in_intended`` — do dodania do PBN (BPP chce, PBN nie ma)
+        - ``only_in_pbn`` — do usunięcia z PBN (jest w PBN, brak w oczekiwanych)
+        - ``only_in_intended`` — do dodania do PBN (oczekiwane, brak w PBN)
         """
         pbn_keys = {self._statement_key_pbn(s) for s in pbn_statements}
         intended_keys = {self._statement_key_intended(s) for s in intended_statements}

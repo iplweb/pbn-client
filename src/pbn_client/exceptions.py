@@ -126,8 +126,9 @@ def parse_pbn_validation_details(parsed_json):
 class PBNValidationError(HttpException):
     """PBN rejected user data with a validation response.
 
-    ``__str__`` intentionally remains inherited. BPP's compatibility layer
-    parses the original exception tuple and requires the raw response body.
+    ``__str__`` intentionally remains the inherited ``HttpException`` form:
+    consumers that parse the original exception tuple rely on the raw
+    response body remaining available.
     """
 
     def __init__(self, status_code, url, content):

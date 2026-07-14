@@ -56,7 +56,7 @@ class OAuthMixin:
                 raise AuthenticationConfigurationError(
                     "Token aplikacji PBN nieprawidłowy. Poproś administratora "
                     "o skonfigurowanie prawidłowego tokena aplikacji PBN w "
-                    "ustawieniach obiektu Uczelnia. "
+                    "konfiguracji aplikacji. "
                 ) from e
 
             raise AuthenticationResponseError(response.content) from e

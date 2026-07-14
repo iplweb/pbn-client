@@ -1,13 +1,12 @@
-"""Czysty klient protokołu PBN (Warstwa 1).
+"""Czysty klient protokołu PBN.
 
 ``PBNClient`` to kompozycja mixinów protokołu (słownikowo-CRUD + silnik
-oświadczeń ``StatementsMixin``). Nie zna ``bpp`` ani obiektu ``Uczelnia`` —
-operuje na tokenach, PBN UID-ach, JSON-ach i flagach bool.
+oświadczeń ``StatementsMixin``). Operuje na tokenach, PBN UID-ach, JSON-ach
+i flagach bool — nie zna modelu domenowego aplikacji-hosta.
 
-Orchestracja synchronizacji BPP↔PBN (znająca rekord i ``Uczelnia``) żyje
-w ``pbn_api/client`` jako ``BppPBNClient`` dziedziczący po tej klasie.
-
-Patrz: docs/superpowers/specs/2026-06-02-pbn-client-split-design.md
+Orkiestracja synchronizacji specyficzna dla aplikacji (znająca jej rekordy
+i konfigurację instytucji) powinna żyć w warstwie aplikacji, jako klasa
+dziedzicząca po ``PBNClient``.
 """
 
 import sys
@@ -41,7 +40,7 @@ class PBNClient(
     SearchMixin,
     StatementsMixin,
 ):
-    """Czysty klient protokołu PBN (bez orchestracji BPP, bez wiedzy o Uczelni)."""
+    """Czysty klient protokołu PBN (bez orkiestracji specyficznej dla aplikacji)."""
 
     _interactive = False
 

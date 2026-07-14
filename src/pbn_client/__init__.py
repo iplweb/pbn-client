@@ -1,10 +1,8 @@
-"""PBN API client — czysta warstwa protokołu (Warstwa 1, reusable).
+"""Klient API PBN — czysta, niezależna od frameworka warstwa protokołu.
 
-Pakiet świadomie NIE zależy od ``bpp`` ani od ``pbn_api`` — to kandydat do
-ekstrakcji jako osobny pakiet. Wie wyłącznie o pojęciach PBN: tokeny, URL-e,
-PBN UID, JSON-y, flagi bool.
-
-Patrz: docs/superpowers/specs/2026-06-02-pbn-client-split-design.md
+Pakiet operuje wyłącznie na pojęciach PBN: tokeny, URL-e, PBN UID-y, JSON-y
+i flagi bool. Nie zna modelu domenowego żadnej aplikacji-hosta, więc może
+być używany przez dowolny projekt integrujący się z PBN.
 """
 
 from .auth import OAuthMixin
