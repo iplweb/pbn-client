@@ -16,6 +16,7 @@ __all__ = [
     "PublicationNotFound",
     "ResourceLockedException",
     "SciencistDoesNotExist",
+    "ScientistDoesNotExist",
     "StatementsResendFailedException",
     "parse_pbn_validation_details",
 ]
@@ -61,8 +62,12 @@ class AccessDeniedException(Exception):
         self.content = content
 
 
-class SciencistDoesNotExist(Exception):
+class ScientistDoesNotExist(Exception):
     """The requested scientist does not exist in PBN."""
+
+
+#: Backward-compatibility alias for the misspelled 0.1.x name.
+SciencistDoesNotExist = ScientistDoesNotExist
 
 
 class AuthenticationConfigurationError(Exception):
@@ -88,15 +93,20 @@ class PublicationDoesNotExistInInstitutionProfile(ValueError):
 class StatementsResendFailedException(Exception):
     """Statement synchronization failed after exhausting its retry policy."""
 
-    def __init__(self, publication_pk, pbn_uid, last_error):
-        self.publication_pk = publication_pk
+    def __init__(self, correlation_id, pbn_uid, last_error):
+        self.correlation_id = correlation_id
         self.pbn_uid = pbn_uid
         self.last_error = last_error
         super().__init__(
-            f"Synchronizacja oświadczeń dla pracy pk={publication_pk} "
-            f"(PBN UID={pbn_uid}) nie powiodła się po wyczerpaniu prób: "
-            f"{last_error}"
+            f"Synchronizacja oświadczeń dla pracy o identyfikatorze "
+            f"{correlation_id} (PBN UID={pbn_uid}) nie powiodła się po "
+            f"wyczerpaniu prób: {last_error}"
         )
+
+    @property
+    def publication_pk(self):
+        """Backward-compatibility alias for :attr:`correlation_id` (0.1.x)."""
+        return self.correlation_id
 
 
 def parse_pbn_validation_details(parsed_json):
