@@ -26,6 +26,7 @@ from .mixins import (
     SearchMixin,
 )
 from .pagination import PageableResource
+from .paging import RetryPolicy, iter_pages
 from .reporting import (
     ErrorReporter,
     LoggingReporter,
@@ -52,6 +53,8 @@ __all__ = [
     "PublishersMixin",
     "SearchMixin",
     "PageableResource",
+    "RetryPolicy",
+    "iter_pages",
     "ErrorReporter",
     "LoggingReporter",
     "NullReporter",
