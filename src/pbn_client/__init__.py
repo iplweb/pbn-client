@@ -34,6 +34,7 @@ from .reporting import (
     get_default_reporter,
     set_default_reporter,
 )
+from .statements import StatementsMixin, decode_publication_object_id
 from .transport import PBNClientTransport, RequestsTransport
 from .utils import smart_content
 
@@ -52,6 +53,8 @@ __all__ = [
     "PublicationsMixin",
     "PublishersMixin",
     "SearchMixin",
+    "StatementsMixin",
+    "decode_publication_object_id",
     "PageableResource",
     "RetryPolicy",
     "iter_pages",

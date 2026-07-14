@@ -37,6 +37,36 @@ rollbar = default_reporter
 logger = logging.getLogger(__name__)
 
 
+def decode_publication_object_id(response, *, bez_oswiadczen):
+    """Dekoduje identyfikator obiektu z odpowiedzi POST-a publikacji.
+
+    Dwa endpointy PBN zwracają identyfikator w różnych kształtach:
+
+    - ``bez_oswiadczen=False`` → ``/v1/publications`` zwraca pojedynczy
+      słownik ``{"objectId": ...}``; funkcja zwraca ``objectId``
+      (lub ``None``, gdy odpowiedź nie jest słownikiem albo brak klucza).
+    - ``bez_oswiadczen=True`` → ``/v1/repositorium/publications`` zwraca
+      listę 1-elementową ``[{"id": ...}]``; funkcja zwraca ``id``.
+      Gdy lista ma inną długość niż 1 (wynik niejednoznaczny) — rzuca
+      wyjątek zamiast po cichu zwracać ``None``.
+    """
+    if not bez_oswiadczen:
+        return response.get("objectId", None) if isinstance(response, dict) else None
+
+    if len(response) != 1:
+        raise Exception(
+            "Lista zwróconych obiektów przy wysyłce pracy do repozytorium "
+            "różna od jednego. "
+            "Sytuacja nieobsługiwana, proszę o kontakt z autorem programu. "
+        )
+    try:
+        return response[0].get("id", None)
+    except (KeyError, IndexError) as e:
+        raise Exception(
+            f"Serwer zwrócił nieoczekiwaną odpowiedź. ret={response!r}"
+        ) from e
+
+
 class StatementsMixin:
     """Czyste operacje publikacji i oświadczeń PBN (bez zależności od aplikacji)."""
 
@@ -174,22 +204,9 @@ class StatementsMixin:
         """
         if not bez_oswiadczen:
             ret = self.post_publication(js)
-            objectId = ret.get("objectId", None) if isinstance(ret, dict) else None
-            return ret, objectId
-
-        ret = self.post_publication_no_statements(js)
-        if len(ret) != 1:
-            raise Exception(
-                "Lista zwróconych obiektów przy wysyłce pracy do repozytorium "
-                "różna od jednego. "
-                "Sytuacja nieobsługiwana, proszę o kontakt z autorem programu. "
-            )
-        try:
-            objectId = ret[0].get("id", None)
-        except (KeyError, IndexError) as e:
-            raise Exception(f"Serwer zwrócił nieoczekiwaną odpowiedź. {ret=}") from e
-
-        return ret, objectId
+        else:
+            ret = self.post_publication_no_statements(js)
+        return ret, decode_publication_object_id(ret, bez_oswiadczen=bez_oswiadczen)
 
     def _delete_statements_with_retry(self, pbn_uid_id, max_tries=5):
         """Delete publication statements with retry on failure.
@@ -222,7 +239,7 @@ class StatementsMixin:
     _STATEMENT_RETRY_DELAYS = (2, 4, 8)  # exponential backoff przy 3 próbach
 
     @staticmethod
-    def _statement_key_pbn(stmt):
+    def statement_key_pbn(stmt):
         """Klucz porównania dla oświadczenia z PBN GET response."""
         return (
             str(stmt.get("personId", "")),
@@ -230,14 +247,14 @@ class StatementsMixin:
         )
 
     @staticmethod
-    def _statement_key_intended(stmt):
+    def statement_key_intended(stmt):
         """Klucz porównania dla oświadczenia z ``pbn_get_json_statements``."""
         return (
             str(stmt.get("personObjectId", "")),
             str(stmt.get("disciplineId", "")),
         )
 
-    def _diff_statements(self, pbn_statements, intended_statements):
+    def diff_statements(self, pbn_statements, intended_statements):
         """Porównuje zestaw oświadczeń PBN z zestawem oczekiwanym.
 
         Zwraca (only_in_pbn, only_in_intended) jako sety kluczy
@@ -246,9 +263,15 @@ class StatementsMixin:
         - ``only_in_pbn`` — do usunięcia z PBN (jest w PBN, brak w oczekiwanych)
         - ``only_in_intended`` — do dodania do PBN (oczekiwane, brak w PBN)
         """
-        pbn_keys = {self._statement_key_pbn(s) for s in pbn_statements}
-        intended_keys = {self._statement_key_intended(s) for s in intended_statements}
+        pbn_keys = {self.statement_key_pbn(s) for s in pbn_statements}
+        intended_keys = {self.statement_key_intended(s) for s in intended_statements}
         return pbn_keys - intended_keys, intended_keys - pbn_keys
+
+    # Aliasy zachowujące zgodność wsteczną — te same obiekty co publiczne
+    # nazwy powyżej (istniejący kod woła wersje z podkreśleniem).
+    _statement_key_pbn = statement_key_pbn
+    _statement_key_intended = statement_key_intended
+    _diff_statements = diff_statements
 
     def _report_statements_failure_and_raise(
         self, publication_pk, objectId, last_error
