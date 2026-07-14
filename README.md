@@ -1,5 +1,8 @@
 # pbn-client
 
+[![CI](https://github.com/iplweb/pbn-client/actions/workflows/ci.yml/badge.svg)](https://github.com/iplweb/pbn-client/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 `pbn-client` is a framework-independent Python client for communication with
 the Polish Bibliography Network (PBN) API. It provides HTTP authentication,
 pagination, dictionary and publication endpoints, and institution-profile
@@ -68,7 +71,11 @@ that prefer a process-wide policy.
 From the repository root:
 
 ```console
-uv run --project packages/pbn-client pytest
-uv run ruff check packages/pbn-client
-uv build --project packages/pbn-client
+uv run --isolated pytest
+uv run ruff check .
+uv build
 ```
+
+## License
+
+`pbn-client` is released under the [MIT License](LICENSE).

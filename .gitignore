@@ -6,3 +6,22 @@ __pycache__/
 dist/
 build/
 *.egg-info/
+
+# Secrets / local env
+.env
+.env.*
+!.env.example
+!.env.sample
+*.pem
+*.key
+
+# IDE / editor
+.idea/
+.vscode/
+*.sublime-workspace
+
+# OS turds
+.DS_Store
+Thumbs.db
+desktop.ini
+._*
