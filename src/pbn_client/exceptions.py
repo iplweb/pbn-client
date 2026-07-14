@@ -13,6 +13,7 @@ __all__ = [
     "PBNValidationError",
     "PraceSerwisoweException",
     "PublicationDoesNotExistInInstitutionProfile",
+    "PublicationNotFound",
     "ResourceLockedException",
     "SciencistDoesNotExist",
     "StatementsResendFailedException",
@@ -42,6 +43,16 @@ class HttpException(Exception):
 
 class ResourceLockedException(HttpException):
     pass
+
+
+class PublicationNotFound(HttpException):
+    """PBN explicitly reported the publication does not exist.
+
+    Raised only when PBN answers HTTP 422 with the marker
+    ``"was not exists!"`` in the response body (original PBN spelling).
+    A plain HTTP 404 is NOT mapped to this exception — it may be
+    transient and propagates as a regular ``HttpException``.
+    """
 
 
 class AccessDeniedException(Exception):

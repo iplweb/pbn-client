@@ -8,6 +8,7 @@ być używany przez dowolny projekt integrujący się z PBN.
 from .auth import OAuthMixin
 from .authors import normalize_author_name
 from .client import PBNClient
+from .exceptions import PublicationNotFound
 from .identifiers import is_valid_object_id, parse_publication_id
 from .mixins import (
     ConferencesMixin,
@@ -40,6 +41,7 @@ __all__ = [
     "InstitutionsProfileMixin",
     "JournalsMixin",
     "PersonMixin",
+    "PublicationNotFound",
     "PublicationsMixin",
     "PublishersMixin",
     "SearchMixin",
