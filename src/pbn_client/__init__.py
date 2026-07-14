@@ -7,6 +7,7 @@ być używany przez dowolny projekt integrujący się z PBN.
 
 from .auth import OAuthMixin
 from .client import PBNClient
+from .identifiers import is_valid_object_id, parse_publication_id
 from .mixins import (
     ConferencesMixin,
     DictionariesMixin,
@@ -50,4 +51,6 @@ __all__ = [
     "PBNClientTransport",
     "RequestsTransport",
     "smart_content",
+    "is_valid_object_id",
+    "parse_publication_id",
 ]
