@@ -64,13 +64,18 @@ def test_parse_never_raises(value):
 
 
 def test_parse_deep_json_content_does_not_raise():
-    # Głęboko zagnieżdżone body z wrogiej odpowiedzi PBN — json.loads rzuciłby
-    # RecursionError; parse() musi pozostać totalne (content_json = None).
+    # Głęboko zagnieżdżone body z wrogiej odpowiedzi PBN. Na CPythonie <3.14
+    # json.loads rzuca RecursionError (→ content_json None, valid False); 3.14+
+    # parsuje głębiej bez błędu. W OBU przypadkach parse() musi pozostać totalne
+    # i rozpoznać krotkę (kod/URL) niezależnie od głębi body.
     deep = "(400, '/x', '" + "[" * 30000 + "]" * 30000 + "')"
     rec = parse(deep)
     assert isinstance(rec, ErrorRecord)
-    assert rec.content_json is None
-    assert rec.content_json_valid is False
+    assert rec.status_code == 400
+    assert rec.url == "/x"
+    # content_json zależny od wersji interpretera: None (RecursionError) albo
+    # sparsowana lista — ale content_json_valid odzwierciedla to spójnie.
+    assert rec.content_json_valid is (rec.content_json is not None)
 
 
 def test_parse_overflow_status_code_falls_through():
