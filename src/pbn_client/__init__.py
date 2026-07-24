@@ -8,6 +8,9 @@ być używany przez dowolny projekt integrujący się z PBN.
 from .auth import OAuthMixin
 from .authors import normalize_author_name
 from .client import PBNClient
+from .error_record import ErrorRecord
+from .error_record import parse as parse_error_record
+from .error_record import serialize as serialize_error_record
 from .exceptions import (
     PublicationNotFound,
     SciencistDoesNotExist,
@@ -41,6 +44,9 @@ from .utils import smart_content
 __all__ = [
     "PBNClient",
     "OAuthMixin",
+    "ErrorRecord",
+    "parse_error_record",
+    "serialize_error_record",
     "SciencistDoesNotExist",
     "ScientistDoesNotExist",
     "ConferencesMixin",
