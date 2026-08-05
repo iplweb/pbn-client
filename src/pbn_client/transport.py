@@ -214,7 +214,10 @@ class RequestsTransport(OAuthMixin, PBNClientTransport):
     def _check_error_response(self, ret, url):
         """Check and handle error responses."""
         if ret.status_code >= 400:
-            if ret.status_code == 423 and smart_content(ret.content) == "Locked":
+            # 423 = Locked (RFC 4918): blokada przejściowa, do ponowienia.
+            # Semantykę niesie status, nie treść body — PBN zwraca raz gołe
+            # "Locked", raz JSON-a. Nie raportujemy do Rollbara.
+            if ret.status_code == 423:
                 raise ResourceLockedException(
                     ret.status_code, url, smart_content(ret.content)
                 )

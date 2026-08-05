@@ -6,6 +6,7 @@ from fakes import MockTransport
 from pbn_client.exceptions import (
     HttpException,
     PBNValidationError,
+    ResourceLockedException,
     parse_pbn_validation_details,
 )
 
@@ -143,8 +144,8 @@ def test_transport_500_with_details_shape_still_reports_rollbar(monkeypatch):
     report.assert_called_once()
 
 
-@pytest.mark.parametrize("status", [401, 403, 423])
-def test_transport_auth_and_locked_not_validation(monkeypatch, status):
+@pytest.mark.parametrize("status", [401, 403])
+def test_transport_auth_not_validation(monkeypatch, status):
     report = _patch_reporter(monkeypatch)
     t = MockTransport()
     ret = _FakeResponse(status, '{"details":{"x":"y"}}')
@@ -152,3 +153,31 @@ def test_transport_auth_and_locked_not_validation(monkeypatch, status):
         t._check_error_response(ret, "/api/v1/publications")
     assert not isinstance(ei.value, PBNValidationError)
     report.assert_called_once()
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        "Locked",
+        '{"message":"Locked","description":"Publikacja zostało tymczasowo '
+        'zablokowane z uwagi na równoległą operację."}',
+        '{"details":{"x":"y"}}',
+    ],
+)
+def test_transport_423_zawsze_resource_locked(monkeypatch, body):
+    """423 = Locked (RFC 4918) niezależnie od kształtu body.
+
+    Rozpoznawanie blokady po treści body zamieniało ją w zwykły
+    HttpException, który konsument zapisywał jako błąd terminalny.
+    """
+    report = _patch_reporter(monkeypatch)
+    t = MockTransport()
+    ret = _FakeResponse(423, body)
+
+    with pytest.raises(ResourceLockedException) as ei:
+        t._check_error_response(ret, "/api/v2/institution-profile/statements")
+
+    assert ei.value.status_code == 423
+    assert not isinstance(ei.value, PBNValidationError)
+    # Blokada jest przejściowa i obsługiwana ponowieniem — nie idzie do Rollbara
+    report.assert_not_called()
