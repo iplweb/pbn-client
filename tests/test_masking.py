@@ -26,3 +26,14 @@ def test_mask_secret_krotki_caly_zamaskowany():
 def test_mask_secret_pusty_lub_none():
     assert mask_secret(None) == "(brak)"
     assert mask_secret("") == "(brak)"
+
+
+def test_mask_user_token_in_text():
+    from pbn_client.utils import mask_user_token_in_text
+
+    txt = "Podany token użytkownika abcdef123456 w ramach aplikacji X"
+    assert mask_user_token_in_text(txt) == (
+        "Podany token użytkownika ********3456 w ramach aplikacji X"
+    )
+    assert mask_user_token_in_text("bez tokenu") == "bez tokenu"
+    assert mask_user_token_in_text(b"bajty") == b"bajty"

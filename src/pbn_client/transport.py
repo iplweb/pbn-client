@@ -26,7 +26,7 @@ from pbn_client.exceptions import (
 from .auth import OAuthMixin
 from .pagination import PageableResource
 from .reporting import ErrorReporter, default_reporter
-from .utils import smart_content
+from .utils import mask_user_token_in_text, smart_content
 
 # Backwards-compatible patch point for applications/tests that used
 # ``pbn_client.transport.rollbar``. It is a package-owned reporter proxy and
@@ -184,6 +184,11 @@ class RequestsTransport(OAuthMixin, PBNClientTransport):
         """Get appropriate HTTP method."""
         return requests.delete if delete else requests.post
 
+    @staticmethod
+    def _403_content(ret):
+        """Treść odpowiedzi 403 z zamaskowanym tokenem użytkownika."""
+        return mask_user_token_in_text(smart_content(ret.content))
+
     def _raise_if_needs_pbn_auth_text(self, ret, url):
         """403 z gołym tekstem o nieważnym tokenie użytkownika.
 
@@ -194,7 +199,7 @@ class RequestsTransport(OAuthMixin, PBNClientTransport):
         """
         from pbn_client.const import NEEDS_PBN_AUTH_MSG
 
-        content = smart_content(ret.content)
+        content = self._403_content(ret)
         if isinstance(content, str) and content.lstrip().startswith(NEEDS_PBN_AUTH_MSG):
             raise NeedsPBNAuthorisationException(ret.status_code, url, content)
 
@@ -208,7 +213,7 @@ class RequestsTransport(OAuthMixin, PBNClientTransport):
                 ret.status_code,
                 url,
                 "Blad podczas odkodowywania JSON podczas odpowiedzi 403: "
-                + smart_content(ret.content),
+                + self._403_content(ret),
             ) from e
 
     def _handle_403_access_denied(self, ret_json, ret, url):
@@ -222,7 +227,7 @@ class RequestsTransport(OAuthMixin, PBNClientTransport):
             "description", ""
         ).startswith(NEEDS_PBN_AUTH_MSG):
             raise NeedsPBNAuthorisationException(
-                ret.status_code, url, smart_content(ret.content)
+                ret.status_code, url, self._403_content(ret)
             )
 
         if hasattr(self, "authorize"):

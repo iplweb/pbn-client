@@ -57,3 +57,40 @@ def test_get_403_nieprawidlowy_token_tekstem(monkeypatch):
     )
     with pytest.raises(NeedsPBNAuthorisationException):
         _transport().get("/api/v1/publications/id/x")
+
+
+TOKEN = "c2c8mtmn4iv9ffn33n18plnaqi00thhe"
+TEKST_403_Z_TOKENEM = TEKST_403.replace("abc123", TOKEN)
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        TEKST_403_Z_TOKENEM,
+        json.dumps({"message": "Forbidden", "description": TEKST_403_Z_TOKENEM}),
+        json.dumps(
+            {"message": "Forbidden", "description": TEKST_403_Z_TOKENEM},
+            ensure_ascii=False,
+        ),
+    ],
+)
+def test_403_nie_ujawnia_tokenu_uzytkownika(monkeypatch, body):
+    monkeypatch.setattr(
+        "pbn_client.transport.requests.post",
+        lambda *a, **kw: _FakeResp(403, body),
+    )
+    with pytest.raises(NeedsPBNAuthorisationException) as ei:
+        _transport().post("/api/v1/repositorium/publications", body=[{}])
+    assert TOKEN not in str(ei.value)
+    assert TOKEN not in str(ei.value.content)
+    assert TOKEN[-4:] in str(ei.value.content)
+
+
+def test_403_nieznany_tekst_nie_ujawnia_tokenu():
+    # Awaryjna ścieżka (tekst, ale bez znanego prefiksu) też maskuje token.
+    from pbn_client.exceptions import HttpException
+
+    ret = _FakeResp(403, "Inny błąd. Podany token użytkownika " + TOKEN + " zły")
+    with pytest.raises(HttpException) as ei:
+        _transport()._parse_403_response(ret, "/x")
+    assert TOKEN not in str(ei.value)
