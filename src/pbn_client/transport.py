@@ -122,6 +122,8 @@ class RequestsTransport(OAuthMixin, PBNClientTransport):
 
     def _handle_403_response(self, ret, url, headers, fail_on_auth_missing):
         """Handle 403 response, attempting reauthorization if needed."""
+        self._raise_if_needs_pbn_auth_text(ret, url)
+
         if fail_on_auth_missing:
             raise AccessDeniedException(url, smart_content(ret.content))
 
@@ -182,8 +184,23 @@ class RequestsTransport(OAuthMixin, PBNClientTransport):
         """Get appropriate HTTP method."""
         return requests.delete if delete else requests.post
 
+    def _raise_if_needs_pbn_auth_text(self, ret, url):
+        """403 z gołym tekstem o nieważnym tokenie użytkownika.
+
+        PBN zwraca tę odpowiedź raz jako JSON (obsługiwany niżej po
+        ``description``), a raz jako ``text/plain`` — wtedy parsowanie JSON
+        się wywraca i użytkownik dostaje niezrozumiały błąd zamiast prośby
+        o ponowną autoryzację w PBN.
+        """
+        from pbn_client.const import NEEDS_PBN_AUTH_MSG
+
+        content = smart_content(ret.content)
+        if isinstance(content, str) and content.lstrip().startswith(NEEDS_PBN_AUTH_MSG):
+            raise NeedsPBNAuthorisationException(ret.status_code, url, content)
+
     def _parse_403_response(self, ret, url):
         """Parse 403 response JSON."""
+        self._raise_if_needs_pbn_auth_text(ret, url)
         try:
             return ret.json()
         except BaseException as e:
